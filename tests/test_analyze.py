@@ -49,8 +49,8 @@ class TestAnalyzeGrover:
         assert analysis["success_probability"] == pytest.approx(1.0)
 
     def test_low_fidelity_fails(self):
-        # Target is "101" but only 50% probability
-        result = _make_grover_result({"101": 0.5, "000": 0.5}, ["101"])
+        # Target is "101" but only 90% of fidelity
+        result = _make_grover_result({"101": FIDELITY_THRESHOLD * 0.9, "000": 1 - FIDELITY_THRESHOLD * 0.9}, ["101"])
         analysis = _analyze_grover(result)
         assert analysis["passed"] is False
         assert len(analysis["suggestions"]) > 0

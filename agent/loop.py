@@ -58,6 +58,8 @@ def run(user_request: str, verbose: bool = True) -> str:
     Returns:
         The agent's final answer as a string.
     """
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError("ANTHROPIC_API_KEY environment variable not set.")
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
     messages = [

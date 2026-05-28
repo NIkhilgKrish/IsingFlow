@@ -9,7 +9,7 @@ The diffuser (inversion about the mean) is appended automatically.
 
 import math
 from qiskit import QuantumCircuit
-from qiskit.circuit.library import GroverOperator, PhaseOracle
+from qiskit.circuit.library import grover_operator
 from config import GROVER_DEFAULT_QUBITS, GROVER_MAX_QUBITS
 
 
@@ -56,7 +56,7 @@ def build_grover_circuit(
     oracle = _build_oracle(target_states, n_qubits)
 
     # Grover operator = oracle + diffuser
-    grover_op = GroverOperator(oracle)
+    grover_op = grover_operator(oracle)
 
     # Full circuit: uniform superposition → Grover iterations → measure
     qc = QuantumCircuit(n_qubits, n_qubits)

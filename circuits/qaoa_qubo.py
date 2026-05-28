@@ -74,6 +74,7 @@ def ising_energy(J: np.ndarray, h: np.ndarray, bitstring: str) -> float:
         Energy as a float.
     """
     s = np.array([1 - 2 * int(b) for b in bitstring], dtype=float)
+    # Ising Hamiltonion @ spin state give energy. Basic QM
     energy = float(h @ s + s @ J @ s)
     return energy
 
