@@ -48,8 +48,8 @@ SIM_NOISE_MODEL: bool = False                # Apply fake backend noise in simul
 # ---------------------------------------------------------------------------
 # IBM Quantum hardware
 # ---------------------------------------------------------------------------
-IBM_CHANNEL: str = "ibm_quantum"             # IBM Quantum channel
-IBM_INSTANCE: str = "ibm-q/open/main"       # Default open access instance
+IBM_CHANNEL: str = "ibm_quantum_platform"    # IBM Quantum channel (updated SDK name)
+IBM_INSTANCE: str = ""                       # Set via instance.json or IBM_QUANTUM_INSTANCE env var
 IBM_BACKEND: str = "least_busy"             # "least_busy" or specific backend name
 HARDWARE_SHOTS: int = 2048                   # Measurement shots on real hardware
 HARDWARE_TIMEOUT_S: int = 300               # Max seconds to wait for job result

@@ -7,7 +7,9 @@ Falls back gracefully with a clear error if credentials are missing.
 
 from __future__ import annotations
 
+import json
 import os
+from pathlib import Path
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
 from qiskit_ibm_runtime.fake_provider import FakeSherbrooke
@@ -19,6 +21,31 @@ from config import (
     HARDWARE_SHOTS,
     HARDWARE_TIMEOUT_S,
 )
+
+# ---------------------------------------------------------------------------
+# Credential loading
+# Checks JSON files in the project root first, then falls back to env vars.
+# Expected formats:
+#   api_key.json  → {"token": "..."} or {"api_key": "..."}
+#   instance.json → {"instance": "..."} (e.g. "ibm-q/open/main")
+# ---------------------------------------------------------------------------
+_ROOT = Path(__file__).parent.parent  # IsingFlow/
+
+
+def _load_token() -> str:
+    key_file = _ROOT / "api_key.json"
+    if key_file.exists():
+        data = json.loads(key_file.read_text())
+        return data.get("token") or data.get("api_key") or ""
+    return os.environ.get("IBM_QUANTUM_TOKEN", "")
+
+
+def _load_instance() -> str:
+    inst_file = _ROOT / "instance.json"
+    if inst_file.exists():
+        data = json.loads(inst_file.read_text())
+        return data.get("instance", IBM_INSTANCE)
+    return os.environ.get("IBM_QUANTUM_INSTANCE", IBM_INSTANCE)
 
 
 def execute_on_hardware(optimize_result: dict, use_fake: bool = False) -> dict:
@@ -50,17 +77,25 @@ def execute_on_hardware(optimize_result: dict, use_fake: bool = False) -> dict:
     if use_fake:
         return _run_fake_backend(qc, metadata)
 
-    token = os.environ.get("IBM_QUANTUM_TOKEN", "")
+    token = _load_token()
     if not token:
         raise RuntimeError(
-            "IBM_QUANTUM_TOKEN environment variable not set. "
-            "Set it or use use_fake=True for testing."
+            "No IBM Quantum token found. "
+            "Place api_key.json in IsingFlow/ or set IBM_QUANTUM_TOKEN env var. "
+            "Use use_fake=True for testing without credentials."
         )
 
+    instance = _load_instance()
+    if not instance:
+        raise RuntimeError(
+            "No IBM Quantum instance found. "
+            "Place instance.json in IsingFlow/ with {\"instance\": \"<your-crn-or-hub/group/project>\"} "
+            "or set IBM_QUANTUM_INSTANCE env var."
+        )
     service = QiskitRuntimeService(
         channel=IBM_CHANNEL,
         token=token,
-        instance=IBM_INSTANCE,
+        instance=instance,
     )
 
     if IBM_BACKEND == "least_busy":

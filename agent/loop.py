@@ -12,6 +12,7 @@ No framework required — the full loop is ~80 lines.
 from __future__ import annotations
 
 import json
+import os
 import re
 import anthropic
 
@@ -102,7 +103,7 @@ def run(user_request: str, verbose: bool = True) -> str:
                 "Please output 'ACTION: <tool_name>' followed by 'INPUT: <json>'."
             )
         else:
-            observation = _call_tool(tool_name, tool_input, verbose)
+            observation = _call_tool(tool_name, tool_input, verbose, raw_text=llm_output)
 
         if verbose:
             print(f"OBSERVATION: {_summarize(observation)}")
@@ -137,7 +138,7 @@ def _parse_action(text: str) -> tuple[str | None, dict]:
     return tool_name, tool_input
 
 
-def _call_tool(tool_name: str, tool_input: dict, verbose: bool) -> dict | str:
+def _call_tool(tool_name: str, tool_input: dict, verbose: bool, raw_text: str = "") -> dict | str:
     """Execute a tool, threading context automatically."""
     if tool_name not in TOOLS:
         return f"ERROR: Unknown tool '{tool_name}'. Available: {list(TOOLS.keys())}"
@@ -154,7 +155,15 @@ def _call_tool(tool_name: str, tool_input: dict, verbose: bool) -> dict | str:
         elif tool_name == "simulate_circuit":
             result = fn(_CONTEXT.get("optimize_circuit", tool_input))
         elif tool_name == "execute_on_hardware":
+            # Respect LLM's use_fake request; also auto-fallback if no IBM token is set
+            from tools.hardware import _load_token
             use_fake = tool_input.get("use_fake", False)
+            # JSON parse often fails on this tool (large nested INPUT); fall back to regex
+            if not use_fake and "_parse_error" in tool_input:
+                use_fake = bool(re.search(r'"use_fake"\s*:\s*true', raw_text, re.IGNORECASE))
+            if not use_fake and not _load_token():
+                use_fake = True
+                print("INFO: No IBM Quantum token found — falling back to FakeSherbrooke noise model.")
             result = fn(_CONTEXT.get("optimize_circuit", tool_input), use_fake=use_fake)
         elif tool_name == "analyze_results":
             # Use simulation or hardware result, whichever is available
