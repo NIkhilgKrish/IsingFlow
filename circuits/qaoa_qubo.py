@@ -50,12 +50,14 @@ def qubo_to_ising(Q: np.ndarray) -> tuple[np.ndarray, np.ndarray, float]:
     offset = 0.0
 
     for i in range(n):
-        h[i] += Q[i, i] / 2
+        # x_i = (1-s_i)/2  →  Q_ii * x_i = Q_ii/2 - Q_ii/2 * s_i
+        h[i] -= Q[i, i] / 2
         offset += Q[i, i] / 2
         for j in range(i + 1, n):
+            # Q_ij * x_i * x_j = Q_ij/4 * (1 - s_i - s_j + s_i*s_j)
             J[i, j] = Q[i, j] / 4
-            h[i] += Q[i, j] / 4
-            h[j] += Q[i, j] / 4
+            h[i] -= Q[i, j] / 4
+            h[j] -= Q[i, j] / 4
             offset += Q[i, j] / 4
 
     return J, h, offset

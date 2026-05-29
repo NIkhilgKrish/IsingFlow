@@ -65,11 +65,12 @@ class TestGroverCircuit:
 
 class TestQUBOToIsing:
     def test_identity_qubo(self):
-        """Diagonal QUBO (no coupling) → zero J matrix."""
+        """Diagonal QUBO (no coupling) → zero J, h = -0.5 per qubit."""
         Q = np.eye(3)
         J, h, offset = qubo_to_ising(Q)
         assert np.allclose(J, 0), "No off-diagonal coupling expected"
-        assert h.shape == (3,)
+        assert np.allclose(h, -0.5 * np.ones(3)), "h should be -Q_ii/2"
+        assert offset == pytest.approx(1.5)
 
     def test_symmetry(self):
         """Non-symmetric Q should be symmetrized."""
@@ -81,10 +82,12 @@ class TestQUBOToIsing:
         assert np.allclose(h1, h2)
 
     def test_known_2qubit(self):
-        """2-qubit QUBO: Q = [[0,-1],[-1,0]] should couple the two qubits."""
+        """Q = [[0,-1],[-1,0]]: ground state x=[1,1], energy=-1 (upper triangular convention)."""
         Q = np.array([[0, -1], [-1, 0]], dtype=float)
         J, h, offset = qubo_to_ising(Q)
-        assert abs(J[0, 1]) > 1e-10, "Expected non-zero coupling"
+        # Verify energy at each state matches QUBO (upper triangular: f = -x0*x1)
+        assert ising_energy(J, h, "11") + offset == pytest.approx(-1.0)  # x=[1,1], minimum
+        assert ising_energy(J, h, "00") + offset == pytest.approx(0.0)   # x=[0,0]
 
 
 class TestQAOACircuit:

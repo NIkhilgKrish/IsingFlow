@@ -133,7 +133,7 @@ def _optimize_qaoa_params(
         "best_gamma": best_gamma,
         "best_beta": best_beta,
         "best_energy": float(result.fun),
-        "n_iterations": result.nit,
+        "n_iterations": result.nfev,  # COBYLA uses nfev, not nit
         "converged": result.success,
         "bound_circuit": bound_circuit,
     }
